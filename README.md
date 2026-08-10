@@ -94,10 +94,20 @@ nonstop. The same happens service-wide if the re-ID weights are missing.
 
 ## Models
 
+**Neither model is guard-specific.** There is no "security guard" model to train
+or drop in — both files are stock, both are already used by sibling services, and
+guard identity lives entirely in the enrolled gallery.
+
 | Registry key | File | Purpose |
 |---|---|---|
-| `models["person"]` | `resources/weights/yolov8m.pt` | Person detection (COCO class 0). Declared in `constants.MODELS`, backend-version-managed, retrainable via `/trigger_training_process/`. |
-| *(gallery-owned)* | `resources/weights/person-reidentification-retail-0287.xml` + `.bin` | 256-d appearance embedding for guard identity. |
+| `models["person"]` | `resources/weights/yolo11s.pt` | Stock COCO person detection (class 0). Same detector `Intrusion_Detection` uses. Declared in `constants.MODELS`, backend-version-managed. |
+| *(gallery-owned)* | `resources/weights/person-reidentification-retail-0277.xml` + `.bin` | 256-d appearance embedding for guard identity. Fleet standard — also shipped by `Intrusion_Detection`, `PPE_Detection`, `PEOPLE_COUNTING`, `Wild_Animal_Detection`, `Common_Pipeline_Optimised`. |
+
+Both are already present in `resources/weights/`, copied from
+`../Intrusion_Detection/resources/weights/`. Verified working on this machine
+(RTX 4070): `yolo11s` found 4/4 people in `bus.jpg` and 2/2 in `zidane.jpg`, and
+`0277` embedded every crop to 256-d with a **1.000 self-match vs. a 0.312
+best-impostor score** — a wide margin under the default 0.55 gate.
 
 The re-ID embedder is deliberately **not** in `constants.MODELS`: it is owned by
 the gallery built in `initialise_resources()`, because it must also serve the
@@ -207,12 +217,9 @@ not `env_vars`.
       `value_type` `str` against that `service_name`. A mismatch between this and
       `resources/config/config.json` makes alerts **fail validation silently** —
       caught, printed, never delivered. No crash, so it's easy to miss.
-- [ ] **Drop in the person detector:** `resources/weights/yolov8m.pt` (or point
-      `VERSION_DATA` / the backend's active version at whatever you use).
-- [ ] **Drop in the re-ID weights:** both
-      `resources/weights/person-reidentification-retail-0287.xml` **and** `.bin`
-      (OpenVINO Open Model Zoo). *Optional to start* — without them the service
-      runs fine in `any_person` mode and logs a warning.
+- [x] ~~Weights~~ — **done.** `yolo11s.pt` and the `0277` IR pair are already in
+      `resources/weights/`, both verified loading and running on GPU. There is no
+      guard-trained model to add.
 - [ ] **Draw the guard-post zone** in the camera UI. With no zone configured the
       **whole frame** is treated as the post, which is usually not what you want.
 - [ ] **Enrol each guard per camera**, then flip that camera's `PRESENCE_MODE` to
@@ -231,18 +238,40 @@ hybrid hold, zone filtering, error-path 5-tuple) were exercised against stubbed
 `service_skeleton`/OpenVINO and all pass. `main.py` is byte-identical to the
 base-service template.
 
-**Not yet done:** no run against live RabbitMQ frames, real weights or a real
-Django backend — the checklist above is what stands between this and a first
-deployment. Match thresholds in particular should be tuned per site from
-`/guard_status/` output.
+Real weights are in place and verified on GPU (see [Models](#models)).
+
+**Not yet done:** no run against live RabbitMQ frames or a real Django backend —
+the checklist above is what stands between this and a first deployment. Match
+thresholds should be tuned per site from `/guard_status/` output.
 
 ## Running the service
 
 ### Directly
 
+The interpreter must be `/usr/bin/python3.10` — that's the only one on this box
+with `service_skeleton`, `data_transform` and `openvino` installed (miniconda's
+`python3` has none of them).
+
 ```
-sudo <python> services/code/main.py
+sudo /usr/bin/python3.10 services/code/main.py
 ```
+
+> **cuDNN collision on this machine.** Any CUDA convolution **segfaults** under
+> `/usr/bin/python3.10`: torch 2.3.0+cu118 was built against pip cuDNN 8.7.0 but
+> loads the system `/lib/x86_64-linux-gnu/libcudnn.so.8` (8.9.7) instead, because
+> both a `cu11` and a `cu12` NVIDIA stack are pip-installed. `torch.matmul` and
+> `torchvision.ops.nms` on CUDA still work, so it looks healthy until the first
+> convolution — then the process dies with no traceback. This affects **every**
+> YOLO service run directly on this box, not just this one. Force the matching
+> library first:
+>
+> ```
+> export LD_LIBRARY_PATH=/home/dnw/.local/lib/python3.10/site-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
+> ```
+>
+> Verify with `python3.10 -c "import torch; print(torch.backends.cudnn.version())"`
+> — it must print `8700`, not `8907`. Docker is unaffected (the image installs its
+> own matched torch/torchvision), so the container path needs none of this.
 
 ### Docker
 

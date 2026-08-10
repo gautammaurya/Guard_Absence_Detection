@@ -32,10 +32,11 @@ PERSON_CLASS_INDEX = 0
 
 # ── Re-ID embedder (owned by the gallery, not by MODELS) ─────────────────────
 # OpenVINO IR pair (.xml + .bin) must both sit in resources/weights/.
-# Recommended: person-reidentification-retail-0287 (256-d output).
+# person-reidentification-retail-0277 is the fleet standard — the same IR that
+# Intrusion_Detection, PPE_Detection and PEOPLE_COUNTING already ship.
 # If the file is missing the service still runs — it degrades to PRESENCE_MODE
 # "any_person" and logs a warning rather than crashing.
-REID_WEIGHTS = "resources/weights/person-reidentification-retail-0287.xml"
+REID_WEIGHTS = "resources/weights/person-reidentification-retail-0277.xml"
 
 # Where the enrolled guard gallery is persisted across restarts.
 GALLERY_PATH = "resources/gallery/guard_gallery.npz"
@@ -45,9 +46,11 @@ GALLERY_SEED_DIR = "resources/gallery/seed"
 
 # ── Active version (weights=None models resolve to this; training updates it) ──
 VERSION_DATA = {
-    "version_name": "V1",
+    "version_name": "Guard Absence V1",
     "version": {
-        "weights": "resources/weights/yolov8m.pt",
+        # Stock COCO yolo11s — same detector Intrusion_Detection uses. NOT a
+        # guard-trained model: guard identity comes from the re-ID gallery.
+        "weights": "resources/weights/yolo11s.pt",
         "datetime": str(datetime.now()),
     },
     "version_count": 0,

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+logs/
+.claude/worktrees/
+resources/weights/*.pt
+resources/weights/*.xml
+resources/weights/*.bin
+!resources/weights/.gitkeep

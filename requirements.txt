@@ -1,0 +1,15 @@
+cvzone==1.5.6
+flask==3.0.3
+flask-cors==4.0.1
+gdown==4.5.1
+numpy==1.24.4
+opencv-python==4.9.0.80
+openvino==2024.4.0
+pillow==10.3.0
+requests==2.28.1
+shapely==2.0.4
+filterpy
+# Optional — uncomment for services that use toolbox/search.py (FAISS vector search):
+# faiss-cpu==1.8.0
+https://dwnwcloud.in/media/service_skeleton-7.30-py3-none-any.whl
+https://dwnwcloud.in/media/data_transform-0.1.0-py3-none-any.whl

@@ -8,4 +8,6 @@ resources/weights/*.bin
 !resources/weights/.gitkeep
 # Enrolled guard templates and the crops they came from are personal data and
 # runtime state — they belong in the mounted resources/ volume, never in git.
-resources/gallery/
+# The README stays tracked so the expected layout ships with the repo.
+resources/gallery/*
+!resources/gallery/README.md

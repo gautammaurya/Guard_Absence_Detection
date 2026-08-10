@@ -1,7 +1,7 @@
 {
-    "parent_service": "Intrusion",
+    "parent_service": "Guard Absence Detection",
     "parent_service_icon": "./resources/images/service_icon.png",
-    "service_name": "Guard Absence",
+    "service_name": "Guard Absence Detection",
     "information": "Watches a guard-post zone and raises an alert when no security guard has been present for longer than the configured duration (default 5 minutes). Uses a stock person detector plus few-shot re-identification against a small enrolled gallery, so it needs no guard-specific training data.",
     "image": "./resources/images/service_image.png",
     "icon": "./resources/images/service_icon.png",

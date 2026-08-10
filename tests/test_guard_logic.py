@@ -54,7 +54,7 @@ sys.modules["shapely.geometry.polygon"] = _shgp
 ss = types.ModuleType("service_skeleton"); hs = types.ModuleType("service_skeleton.http_server")
 hs.CAMERAS_DATA = {}; hs.Sort = FakeSort; hs.app = FakeApp()
 hs.CAMERAS = {}
-hs.get_config_json = lambda p: {"service_name": "Guard Absence"}
+hs.get_config_json = lambda p: {"service_name": "Guard Absence Detection"}
 hs.success_info = lambda *a, **k: None
 hs.danger_info = lambda *a, **k: None
 hs.send_version_and_classes_details = lambda *a, **k: None

@@ -1,4 +1,4 @@
-# Guard Absence
+# Guard Absence Detection
 
 Watches a guard-post zone and raises an alert when **no security guard has been
 present for longer than 5 minutes** (configurable per camera). It consumes frames
@@ -11,11 +11,26 @@ with almost no guard training data. See
 
 | | |
 |---|---|
-| Django `service_name` | `Guard Absence` |
-| Django `parent_service` | `Intrusion` |
+| Django `service_name` | `Guard Absence Detection` |
+| Django `parent_service` | `Guard Absence Detection` |
 | Alert class | `Guard Absent` / `guard_absent` (index 0, `str`) |
-| Docker image / container | `guard-absence-detection` |
+| Docker image / container | `guard_absence_detection` |
 | Default confidence | `0.45` |
+
+### Replaces the July 2026 attempt
+
+An earlier version of this service lives, untouched, at
+`../Guard_Absence_Detection_OLD_20260728/`. It took the direct route: **one
+custom-trained YOLO "guard" class**, a 2-minute threshold, no zone filtering and
+no re-identification. That approach is exactly what the scarce guard data can't
+support — which is why this rewrite exists. Nothing was deleted; the old tree is
+there if you need to compare or recover anything from it.
+
+Carried forward from it: the `Guard Absence Detection` service name and the
+`Guard Absent` / `guard_absent` class, so the Django registration stays valid.
+Changed: generic person detection + few-shot re-ID instead of a trained guard
+class, a 5-minute default, zone filtering, and per-camera backend-tunable
+parameters.
 
 ## How it works around having very little guard data
 
@@ -181,10 +196,13 @@ not `env_vars`.
 
 ## Before the first run — checklist
 
-- [ ] **Register `Guard Absence` under parent service `Intrusion` in Django
-      admin/backend.** This does **not** happen automatically — nothing in this
-      codebase creates the service record, and `_init_service()` only works
-      against one that already exists.
+- [ ] **Confirm `Guard Absence Detection` is registered as a service (and as its
+      own parent service) in Django admin/backend.** This name is carried over
+      from the July 2026 attempt (archived at
+      `../Guard_Absence_Detection_OLD_20260728/`), so it may already exist — if
+      it does, there is nothing to do here. If it does **not**, register it: this
+      never happens automatically, nothing in this codebase creates the service
+      record, and `_init_service()` only works against one that already exists.
 - [ ] **Register the class** `Guard Absent` / `guard_absent` / index `0` /
       `value_type` `str` against that `service_name`. A mismatch between this and
       `resources/config/config.json` makes alerts **fail validation silently** —
@@ -231,17 +249,17 @@ sudo <python> services/code/main.py
 Build from the repo root (`APP_VERSION` is a build arg, default `1.0.0`):
 
 ```
-docker build -t guard-absence-detection:1.0.0 --build-arg APP_VERSION=1.0.0 .
+docker build -t guard_absence_detection:1.0.0 --build-arg APP_VERSION=1.0.0 .
 ```
 
 Run with GPU access, mounting `resources/` and `logs/` so weights, config and the
 enrolled gallery persist outside the container:
 
 ```
-docker run -d --name guard-absence-detection --gpus all \
+docker run -d --name guard_absence_detection --gpus all \
   -v $(pwd)/resources:/workspace/resources \
   -v $(pwd)/logs:/workspace/logs \
-  guard-absence-detection:1.0.0
+  guard_absence_detection:1.0.0
 ```
 
 Mounting `resources/` is **required**, not optional: the enrolled gallery lives at

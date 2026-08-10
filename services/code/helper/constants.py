@@ -1,7 +1,7 @@
 from datetime import datetime
 
 # ── Service identity ─────────────────────────────────────────────────────────
-SERVICE_DISPLAY_NAME = "Guard Absence"
+SERVICE_DISPLAY_NAME = "Guard Absence Detection"
 EVENT_MESSAGE = "Guard Absence Detected"
 
 # Person-detection confidence fallback when the backend sends none. Deliberately

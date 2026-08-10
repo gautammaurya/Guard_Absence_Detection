@@ -6,3 +6,6 @@ resources/weights/*.pt
 resources/weights/*.xml
 resources/weights/*.bin
 !resources/weights/.gitkeep
+# Enrolled guard templates and the crops they came from are personal data and
+# runtime state — they belong in the mounted resources/ volume, never in git.
+resources/gallery/

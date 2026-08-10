@@ -1,18 +1,18 @@
 {
-    "parent_service": "Base Service",
+    "parent_service": "Intrusion",
     "parent_service_icon": "./resources/images/service_icon.png",
-    "service_name": "Base Service",
-    "information": "Describe what this service does.",
+    "service_name": "Guard Absence",
+    "information": "Watches a guard-post zone and raises an alert when no security guard has been present for longer than the configured duration (default 5 minutes). Uses a stock person detector plus few-shot re-identification against a small enrolled gallery, so it needs no guard-specific training data.",
     "image": "./resources/images/service_image.png",
     "icon": "./resources/images/service_icon.png",
     "version": "1.0.0",
     "classes": [
         {
-            "class_name": "Event Detected",
-            "ai_class_name": "object",
+            "class_name": "Guard Absent",
+            "ai_class_name": "guard_absent",
             "ai_class_index": 0,
             "value_type": "str"
         }
     ],
-    "default_confidence": 0.7
+    "default_confidence": 0.45
 }

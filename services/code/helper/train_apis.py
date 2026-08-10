@@ -81,15 +81,50 @@ _init_service()
 
 def generate_ai_variables():
     """
-    Per-camera state, created when a camera is registered. main.py relies on
-    'skip_counter' and 'count_check_dict_in'. Add service-specific state here as
-    needed — e.g. a SORT tracker via toolbox.tracking.new_tracker(), a
-    deque for presence smoothing, a recent-identity cache, etc.
+    Per-camera state, created when a camera is registered.
+
+    'skip_counter' and 'count_check_dict_in' are required by main.py. Everything
+    below is guard-absence state, all of it per camera because absence is a
+    per-post question and re-ID templates are per-viewpoint:
+
+      tracker                  SORT instance giving people stable IDs so a
+                               guard/not-guard vote can accumulate over a track
+                               instead of being re-decided every frame.
+      guard_track_state        tracker_id -> {scores deque, label, last_seen,
+                               identity}; the rolling median of `scores` is what
+                               labels a track.
+      guard_absence_accum      seconds of confirmed absence banked so far. This
+                               accumulator IS the debounce: brief occlusions add
+                               a few seconds to a 300s budget rather than
+                               resetting a state machine. Zeroed by any
+                               confirmed presence.
+      guard_last_eval_ts       wall-clock of the previous evaluation. Absence is
+                               measured in seconds, never in frames — frame rate
+                               varies per camera and INFERENCE_SKIP drops frames.
+                               None means "first frame": establish the clock
+                               without banking any absence, so a restart can't
+                               instantly alert.
+      guard_last_alert_ts      supports the re-alert cadence; reset to None when
+                               presence resumes so the next episode alerts again.
+      guard_last_auto_enroll_ts  cooldown for bounded gallery self-adaptation.
+      guard_live_crops         most recent quality-gated person crops + their
+                               embeddings, so POST /enroll_guard/ can enrol
+                               whoever is at the post right now with no extra
+                               inference.
     """
     try:
+        from toolbox.tracking import new_tracker
+
         return {
             "skip_counter": 0,
             "count_check_dict_in": {},
+            "tracker": new_tracker(max_age=60, min_hits=0, iou_threshold=0.2),
+            "guard_track_state": {},
+            "guard_absence_accum": 0.0,
+            "guard_last_eval_ts": None,
+            "guard_last_alert_ts": None,
+            "guard_last_auto_enroll_ts": 0.0,
+            "guard_live_crops": [],
         }
     except Exception as e:
         traceback.print_exc()

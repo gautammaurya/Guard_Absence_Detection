@@ -157,10 +157,49 @@ curl -X POST http://<host>:<port>/enroll_guard/ \
 curl -X POST http://<host>:<port>/enroll_guard/ -F 'image=@guard_a.jpg' -F 'camera_id=12' -F 'identity=guard_a'
 ```
 
-**Cold-start from disk** — drop images at
+**From a folder of existing guard crops — use `tools/seed_gallery.py`.** This is
+the right path if you already have cropped guard images. It does not train
+anything; each crop becomes one pinned template.
+
+```bash
+export LD_LIBRARY_PATH=/home/dnw/.local/lib/python3.10/site-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
+/usr/bin/python3.10 tools/seed_gallery.py \
+    --images /path/to/guard_crops --camera-id 12 --identity guard_a \
+    --impostors /path/to/other_people_from_the_same_camera     # optional but strongly advised
+```
+
+It applies the **same crop-quality gate the live service applies**, so what it
+accepts is what runtime accepts, and it reports why anything was skipped. Then it
+answers the question that decides whether the gallery is usable:
+
+```
+  accepted 8 / 10   rejected 2
+  intra-identity cosine: min 0.925  median 0.978  max 0.997
+  best impostor score vs this gallery: 0.290
+  worst guard-to-guard 0.925  vs  best impostor 0.290
+  suggested GUARD_MATCH_THRESHOLD: 0.61   (current default 0.55)
+```
+
+If the two ranges **overlap**, it says so plainly — that gallery will produce
+false "Guard Absent" alerts, and you should stay in `any_person` mode until it
+separates. `--dry-run` reports without writing. Requirements for the crops:
+
+- **Full-body or three-quarter body**, not faces. `0277` is a full-body person
+  re-ID net expecting a 2:1 portrait crop; a roughly square face crop is rejected
+  with that explanation. For face-based identification you'd want a different
+  model entirely (see `../FACE_RECOGNITION`).
+- **Per camera.** Embeddings are viewpoint- and lighting-specific, which is why
+  `--camera-id` is required. Crops from camera A are a weaker template for camera
+  B — usable, but expect lower scores and lean on auto-enrolment to adapt.
+- **10–30 per guard per camera**, and *varied* — different times of day, poses,
+  distances. Twenty near-identical frames from one ten-second clip count as
+  roughly one template.
+
+**Cold-start from disk (manual equivalent)** — drop images at
 `resources/gallery/seed/<camera_id>/<identity>/*.jpg` and restart. They are
 embedded and pinned at startup; already-seeded files are never re-added, so
-adding more images later only adds the new ones.
+adding more images later only adds the new ones. The tool above does exactly this
+plus the quality gate and the report.
 
 Every enrolment also writes its crop into that seed directory, so if the re-ID
 model is ever swapped, all pinned identities can be re-embedded from disk instead

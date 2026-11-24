@@ -1,0 +1,33 @@
+# Ignore version control directories
+.git/
+.gitignore
+
+# Ignore build artifacts
+build/
+dist/
+
+# Ignore IDE or editor settings
+.vscode/
+.idea/
+.letta/
+
+# Ignore log files
+**/*.log
+
+# Ignore environment files
+.env
+.env.local
+
+# Ignore temporary files
+**/*.swp
+**/*.bak
+
+# Python Caches files
+**/__pycache__
+**/*.pyc
+
+# Log Files
+**/logs/
+**/*.xlsx
+**/*.ods
+**/*.mp4

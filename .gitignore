@@ -11,3 +11,4 @@ resources/weights/*.bin
 # The README stays tracked so the expected layout ships with the repo.
 resources/gallery/*
 !resources/gallery/README.md
+security_guard_data/
